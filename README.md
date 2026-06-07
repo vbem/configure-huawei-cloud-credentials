@@ -1,2 +1,2 @@
-# configure-huawei-cloud-credentials
-Configure Huawei Cloud Credentials for GitHub Actions
+# 🌼 Configure Huawei Cloud OIDC Credentials for GitHub Actions
+
