@@ -1,0 +1,190 @@
+---
+name: configure-huawei-cloud-credentials
+author: "@vbem"
+description: 🌼 Configure Huawei Cloud Credentials via OIDC for GitHub Actions
+branding: {icon: user-check, color: gray-dark}
+
+inputs:
+  provider-urn:
+    description: Required, the OIDC provider URN in Huawei Cloud IAM v5.
+    required: true
+  agency-urn:
+    description: Required, the agency URN to assume in Huawei Cloud IAM v5.
+    required: true
+  audience:
+    description: Optional, the audience for OIDC token, default to `sts.huaweicloud.com`.
+    required: false
+    default: sts.huaweicloud.com
+  session-name:
+    description: Optional, the session name for agency assuming, default to `GitHubActions`.
+    required: false
+    default: GitHubActions
+  duration-seconds:
+    description: |-
+      Optional, the duration seconds for agency assuming, default to `3600` (1 hour).
+      The value must be between `900` (15 minutes) and `43200` (12 hours).
+    required: false
+    default: "900"
+  export-env:
+    description: Optional, whether to export the credentials as env vars, default to `true`.
+    required: false
+    default: "true"
+  env-ak-name:
+    description: Optional, env name for Access Key ID, default to `HUAWEICLOUD_SDK_AK`.
+    required: false
+    default: HUAWEICLOUD_SDK_AK
+  env-sk-name:
+    description: Optional, env name for Secret Access Key, default to `HUAWEICLOUD_SDK_SK`.
+    required: false
+    default: HUAWEICLOUD_SDK_SK
+  env-st-name:
+    description: Optional, env name for Security Token, default to `HUAWEICLOUD_SDK_SECURITY_TOKEN`.
+    required: false
+    default: HUAWEICLOUD_SDK_SECURITY_TOKEN
+  sts-region:
+    description: Optional, region of STS API for requesting, default to `cn-north-4`.
+    required: false
+    default: cn-north-4
+
+outputs:
+  ak:
+    description: Access Key ID of the temporary credential.
+    value: ${{ steps.main.outputs.ak }}
+  sk:
+    description: Secret Access Key of the temporary credential.
+    value: ${{ steps.main.outputs.sk }}
+  st:
+    description: Security Token of the temporary credential.
+    value: ${{ steps.main.outputs.st }}
+  expiration:
+    description: Expiration time of the temporary credential in ISO 8601 format.
+    value: ${{ steps.main.outputs.expiration }}
+  urn:
+    description: The URN of the assumed agency in format of
+      `sts::{account_id}::assumed-agency:{agency_name}/{agency_session_name}`.
+    value: ${{ steps.main.outputs.urn }}
+  id:
+    description: The unique ID of the assumed agency.
+    value: ${{ steps.main.outputs.id }}
+
+runs:
+  using: composite
+  steps:
+    - id: main
+      shell: bash
+      run: |-
+        # implementation details
+
+        # `--fail-with-body` only works since curl 7.76.0
+        curl --fail-with-body -V &>/dev/null \
+          && _CURL_FAIL_OPT=--fail-with-body || _CURL_FAIL_OPT=--fail
+
+        # Curl with common options for API calls
+        #   $@: other arguments of `curl`, see https://curl.se/docs/manpage.html
+        #   $?: 0 if successful and none-zero otherwise
+        function curl::api {
+            curl --location "$_CURL_FAIL_OPT" --silent --show-error --compressed "$@"
+        }
+
+        # Group stdin to log in stderr with a title
+        # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#grouping-log-lines
+        #   $1: group title
+        #   $?: 0 if successful and non-zero otherwise
+        #   stdin: logs
+        #   stderr: grouped logs, error logs
+        # Example:
+        #   command |& gh::group "Command Logs"
+        function gh::group {
+            echo "::group::$1" >&2
+            cat >&2 # redirect stdin to stderr
+            echo '::endgroup::' >&2
+        }
+
+        # Mask values as secrets in log
+        # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#masking-a-value-in-a-log
+        # https://docs.github.com/en/actions/reference/security/secure-use#using-secrets
+        #   $@: values
+        #   $?: 0 always
+        # Example:
+        #   gh::mask "$SECRET_VALUE1" "$SECRET_VALUE2"
+        function gh::mask {
+            local each=''
+            for each in "$@"; do
+                [[ -n $each ]] && echo "::add-mask::$each" >&2
+            done
+        }
+
+        # Set stdin as value to output of current step with given name
+        # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#setting-an-output-parameter
+        #   $1: output name
+        #   $?: 0 if successful and non-zero otherwise
+        #   stdin: output value (for supporting pipeline operations such as `curl`)
+        function gh::output {
+            {
+                echo "$1<<__GITHUB_OUTPUT__"
+                cat # redirect stdin to stdout
+                echo '__GITHUB_OUTPUT__'
+            } >>"$GITHUB_OUTPUT" # https://www.gnu.org/software/bash/manual/bash.html#Command-Grouping
+        }
+
+        # Export stdin value as env var with given name for subsequent steps
+        # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
+        #   $1: env var name
+        #   $?: 0 if successful and non-zero otherwise
+        #   stdin: env var value (for supporting pipeline operations such as `curl`)
+        function gh::env::set {
+            {
+                echo "$1<<__GITHUB_ENV__"
+                cat # redirect stdin to stdout
+                echo '__GITHUB_ENV__'
+            } >>"$GITHUB_ENV" # https://www.gnu.org/software/bash/manual/bash.html#Command-Grouping
+        }
+
+        {
+          curl --version &>/dev/null || {
+            echo '❌ curl is required but not found in PATH.' >&2
+            exit 1
+          }
+
+          # https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers
+          echo '🐙 Requesting GitHub's OIDC JWT ...' >&2
+          jwt="$(curl::api --max-time 5 --retry 3 \
+            --header "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=${{ inputs.audience }}" | jq -Mcre .value)"
+
+          # https://support.huaweicloud.com/api-iam5/AssumeAgency.html
+          echo '🌼 Requesting temporary credentials from Huawei Cloud STS ...' >&2
+          payload="$(jq -McRne \
+            --arg jwt "$jwt" \
+            --arg prov "${{ inputs.provider-urn }}" \
+            --arg agency "${{ inputs.agency-urn }}" \
+            --arg session "${{ inputs.session-name }}" \
+            --argjson duration "${{ inputs.duration-seconds }}" \
+            '{"duration_seconds":$duration,"agency_urn":$agency,"agency_session_name":$session}')"
+          res="$(curl::api --max-time 5 --retry 3 \
+            --header 'Content-Type: application/json' \
+            --data "$payload"
+            "https://sts.${{ inputs.sts-region }}.myhuaweicloud.com/v5/agencies/assume"
+
+          echo '🔐 Masking credentials in logs ...' >&2
+          ak="$(jq -Mcre .credentials.access_key_id <<<"$res")"
+          sk="$(jq -Mcre .credentials.secret_access_key <<<"$res")"
+          st="$(jq -Mcre .credentials.security_token <<<"$res")"
+          gh::mask "$ak" "$sk" "$st"
+
+          echo '📤 Outputing credentials and info ....' >&2
+          gh::output ak <<<"$ak"
+          gh::output sk <<<"$sk"
+          gh::output st <<<"$st"
+          jq -Mcre .credentials.expiration <<<"$res" | gh::output expiration
+          jq -Mcre .assumed_agency.urn <<<"$res" | gh::output urn
+          jq -Mcre .assumed_agency.id <<<"$res" | gh::output id
+
+          if [[ "${{ inputs.export-env }}" == 'true' ]]; then
+            echo '⚙️ Exporting credentials as env vars for subsequent steps ...' >&2
+            gh::env::set "${{ inputs.env-ak-name }}" <<<"$ak"
+            gh::env::set "${{ inputs.env-sk-name }}" <<<"$sk"
+            gh::env::set "${{ inputs.env-st-name }}" <<<"$st"
+          fi
+
+        } |& gh::group "🌼 Configure Huawei Cloud Credentials via OIDC for GitHub Actions"

@@ -1,0 +1,40 @@
+---
+name: 🧪 Testing
+run-name: ${{ github.workflow }} - ${{ toJson(inputs) }}
+concurrency: {group: "${{ github.workflow }}"}
+env: {TZ: Asia/Shanghai}
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs-on:
+        description: Runner, default to `"ubuntu-slim"`
+        required: false
+        type: string
+        default: '"ubuntu-slim"'
+
+jobs:
+  debug:
+    runs-on: ${{ fromJson(inputs.runs-on||'ubuntu-slim') }}
+    timeout-minutes: 5
+    defaults: {run: {shell: bash}}
+
+    # `id-token` is required for fetching OIDC token
+    permissions: {id-token: write, contents: read}
+
+    steps:
+      - id: creds
+        name: ⚙️ Configure Huawei Cloud Credentials via OIDC
+        uses: ./
+
+      - name: ⚙️ Setup HW Cloud KooCLI
+        uses: vbem/setup-hcloud@main
+
+      - name: 🧪 Testing HW Cloud API
+        run: |-
+          hcloud sts GetCallerIdentity \
+          --cli-region=cn-east-3 \
+          --cli-access-key="${HUAWEICLOUD_SDK_AK}" \
+          --cli-secret-key="${HUAWEICLOUD_SDK_SK}" \
+          --cli-security-token="${HUAWEICLOUD_SDK_SECURITY_TOKEN}" \
+          | jq -C
