@@ -13,25 +13,35 @@ As a supplement to the lack of official action from Huawei Cloud, this action co
 ## Example usage
 
 ```yaml
-permissions: {id-token: write, contents: read}
+jobs:
+  example:
+    runs-on: ubuntu-slime
+    timeout-minutes: 1
+    defaults: {run: {shell: bash}}
+    permissions: {id-token: write, contents: read}
 
-steps:
-  - name: 🌼 Configure HW Cloud temporary credentials
-    uses: vbem/configure-huawei-cloud-credentials@main
-    with:
-      provider-urn: iam::<account-id>:oidcProvider:<provider-name>
-      agency-urn: iam::<account-id>:agency:<agency-name>
+    steps:
+      - name: 🌼 Configure HW Cloud temporary credentials
+        id: creds
+        uses: vbem/configure-huawei-cloud-credentials@main
+        with:
+          provider-urn: iam::<account-id>:oidcProvider:<provider-name>
+          agency-urn: iam::<account-id>:agency:<agency-name>
 
-  - name: 🖥️ Setup HW Cloud KooCLI for testing
-    uses: vbem/setup-hcloud@main
+      - name: 🔍 Print the action outputs
+        env: {STEP_OUTPUT: "${{ toJson(steps.creds.outputs) }}"}
+        run: jq -C <<<<"$STEP_OUTPUT"
 
-  - name: 🧪 Test temporary credentials by HW Cloud STS service using KooCLI
-    run: |-
-      hcloud sts GetCallerIdentity --cli-region=cn-east-3 \
-          --cli-access-key="${HUAWEICLOUD_SDK_AK}" \
-          --cli-secret-key="${HUAWEICLOUD_SDK_SK}" \
-          --cli-security-token="${HUAWEICLOUD_SDK_SECURITY_TOKEN}" \
-          | jq -C
+      - name: 🖥️ Setup HW Cloud KooCLI for testing
+        uses: vbem/setup-hcloud@main
+
+      - name: 🧪 Test temporary credentials using KooCLI
+        run: |-
+          hcloud sts GetCallerIdentity --cli-region=cn-east-3 \
+            --cli-access-key="${HUAWEICLOUD_SDK_AK}" \
+            --cli-secret-key="${HUAWEICLOUD_SDK_SK}" \
+            --cli-security-token="${HUAWEICLOUD_SDK_SECURITY_TOKEN}" \
+            | jq -C
 ```
 
 ## Inputs
