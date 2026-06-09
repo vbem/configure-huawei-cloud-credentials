@@ -70,7 +70,58 @@ ID | Type | Description | Example
 `urn` | String | URN of the assumed agency. | `sts::<account-id>::assumed-agency:<agency-name>/<session-name>`
 `id` | String | Unique ID of the assumed agency. | `<agency-id>:<session-name>`
 
+## HW Cloud IAM v5 Configuration
+
+Before using this action, you need to configure the OIDC provider and agency in Huawei Cloud IAM v5.
+
+For [Identity Provider](https://console.huaweicloud.com/iam5/#/idp), the following settings are recommended:
+
+Name | Recommended Value | Description
+--- | --- | ---
+Type | `OIDC` | The identity provider type.
+Identity Provider Name | `github_com` | The name to distinguish GitHub servers.
+Identity Provider URL | `https://token.actions.githubusercontent.com` | The [OIDC token issuer of the GitHub server](https://docs.github.com/en/actions/reference/security/oidc).
+Audience | `sts.huaweicloud.com` | The [audience for the OIDC token](https://docs.github.com/en/actions/reference/security/oidc), which should be consistent with the `audience` input of this action.
+Description | The URL of this action | It can help you quickly identify the usage of this provider in the future.
+
+For [Agency](https://support.huaweicloud.com/usermanual-iam5/iam_01_0915.html), the following settings are recommended:
+
+Name | Recommended Value | Description
+--- | --- | ---
+Agency Name | `gh-<usage-desc>` | The name to distinguish the usage of this agency, e.g. `gh-terraform-foobar-prod`.
+Agency Type | Custom trust policy | A "Trust Agency" allows binding to a specific OIDC provider and defining the trust policy with more flexibility.
+Description | The URL of the OIDC Identity provider | It can help you quickly identify the usage of this agency in the future.
+Authorized Poilies | Usage based | Attach the least-privilege [policies](https://support.huaweicloud.com/usermanual-iam5/iam_01_1159.html) based on your usage.
+Trust Policy | See below | See below
+
+The [trust policy](https://support.huaweicloud.com/usermanual-iam5/iam_01_0915.html#section2) controls who can assume this agency and under what conditions. Following is a sample trust policy, which allows GitHub Actions workflows in a specific repository to assume this agency. You can further restrict the permissions by limiting the [`oidc:sub` condition](https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims) or adding other conditions based on your needs.
+
+```json
+{
+  "Version": "5.0",
+  "Statement": [
+    {
+      "Action": ["sts:agencies:assumeWithOIDC"],
+      "Effect": "Allow",
+      "Condition": {
+        "StringLike": {
+          "oidc:sub": "repo:<github-owner-or-org>/<github-repo-id>:*"
+        },
+        "StringEquals": {
+          "oidc:aud": ["sts.huaweicloud.com"],
+          "oidc:iss": ["https://token.actions.githubusercontent.com"]
+        }
+      },
+      "Principal": {
+        "Federated": ["<OIDC-provider-URN>"]
+      }
+    }
+  ]
+}
+```
+
 ## Notes
 
-1. The workflow must [grant `id-token: write` permission](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers#adding-permissions-settings) so GitHub Actions can issue an OIDC token for this action.
-2. This [composite action](https://docs.github.com/en/actions/concepts/workflows-and-actions/custom-actions) requires `bash`, `curl`, and `jq` to be available in the runner environment. The official GitHub-hosted runners have these tools pre-installed.
+1. This action is only compatible with latest [HW Cloud IAM/STS v5](https://support.huaweicloud.com/productdesc-iam5/iam_01_1107.html), the legacy [IAM v3](https://support.huaweicloud.com/iam/index.html) do not support OIDC-based agency federation.
+2. The workflow must [grant `id-token: write` permission](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers#adding-permissions-settings) so GitHub Actions can issue an OIDC token for this action.
+3. This [composite action](https://docs.github.com/en/actions/concepts/workflows-and-actions/custom-actions) requires `bash`, `curl`, and `jq` to be available in the runner environment. The official GitHub-hosted runners have these tools pre-installed.
