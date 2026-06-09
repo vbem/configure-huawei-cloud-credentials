@@ -6,65 +6,78 @@ branding: {icon: user-check, color: gray-dark}
 
 inputs:
   provider-urn:
-    description: Required, the OIDC provider URN in Huawei Cloud IAM v5.
+    description: The OIDC provider URN in Huawei Cloud IAM v5.
+      Required, in format of `iam::<account-id>:oidcProvider:<provider-name>`.
     required: true
   agency-urn:
-    description: Required, the agency URN to assume in Huawei Cloud IAM v5.
+    description: The agency URN to assume in Huawei Cloud IAM v5.
+      Required, in format of `iam::<account-id>:agency:<agency-name>`.
     required: true
   audience:
-    description: Optional, the audience for OIDC token, default to `sts.huaweicloud.com`.
+    description: The audience for OIDC token.
+      Optional, default to `sts.huaweicloud.com`.
     required: false
     default: sts.huaweicloud.com
   session-name:
-    description: Optional, the session name for agency assuming, default to `GitHubActions`.
+    description: The session name for agency assuming.
+      Optional, default to `GitHubActions`.
     required: false
     default: GitHubActions
   duration-seconds:
-    description: |-
-      Optional, the duration seconds for agency assuming, default to `3600` (1 hour).
-      The value must be between `900` (15 minutes) and `43200` (12 hours).
+    description: The duration seconds for agency assuming.
+      Optional, between `900` (15 mins) and `43200` (12 hrs), default to `900` (15 mins).
     required: false
     default: "900"
   export-env:
-    description: Optional, whether to export the credentials as env vars, default to `true`.
+    description: Whether to export the credentials as env vars.
+      Optional, default to `true`.
     required: false
     default: "true"
   env-ak-name:
-    description: Optional, env name for Access Key ID, default to `HUAWEICLOUD_SDK_AK`.
+    description: The env name for Access Key ID to export.
+      Optional, default to `HUAWEICLOUD_SDK_AK`.
     required: false
     default: HUAWEICLOUD_SDK_AK
   env-sk-name:
-    description: Optional, env name for Secret Access Key, default to `HUAWEICLOUD_SDK_SK`.
+    description: The env name for Secret Access Key to export.
+      Optional, default to `HUAWEICLOUD_SDK_SK`.
     required: false
     default: HUAWEICLOUD_SDK_SK
   env-st-name:
-    description: Optional, env name for Security Token, default to `HUAWEICLOUD_SDK_SECURITY_TOKEN`.
+    description: The env name for Security Token to export.
+      Optional, default to `HUAWEICLOUD_SDK_SECURITY_TOKEN`.
     required: false
     default: HUAWEICLOUD_SDK_SECURITY_TOKEN
   sts-region:
-    description: Optional, region of STS API for requesting, default to `cn-north-4`.
+    description: The region of HW Cloud STS API for requesting.
+      Optional, default to `cn-north-4`.
     required: false
     default: cn-north-4
 
 outputs:
   ak:
     description: Access Key ID of the temporary credential.
+      String, in format of `HSTANO...........`.
     value: ${{ steps.main.outputs.ak }}
   sk:
     description: Secret Access Key of the temporary credential.
+      String, in format of `EoWCQrr...........`.
     value: ${{ steps.main.outputs.sk }}
   st:
     description: Security Token of the temporary credential.
+      String, in format of `hQpjbi1...........`.
     value: ${{ steps.main.outputs.st }}
   expiration:
     description: Expiration time of the temporary credential in ISO 8601 format.
+      Datetime, e.g. `2022-09-07T03:27:51.158Z`.
     value: ${{ steps.main.outputs.expiration }}
   urn:
-    description: The URN of the assumed agency in format of
-      `sts::{account_id}::assumed-agency:{agency_name}/{agency_session_name}`.
+    description: The URN of the assumed agency.
+      String, in format of `sts::<account-id>::assumed-agency:<agency-name>/<session-name>`.
     value: ${{ steps.main.outputs.urn }}
   id:
     description: The unique ID of the assumed agency.
+      String, in format of `<agency-id>:<session-name>`.
     value: ${{ steps.main.outputs.id }}
 
 runs:
@@ -141,18 +154,21 @@ runs:
         }
 
         {
-          curl --version &>/dev/null || {
+          command -v curl &>/dev/null || {
             echo '❌ curl is required but not found in PATH.' >&2
             exit 1
           }
 
           # https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers
-          echo '🐙 Requesting GitHub's OIDC JWT ...' >&2
+          # https://docs.github.com/en/actions/reference/security/oidc
+          echo "🐙 Requesting GitHub's OIDC JWT from $ACTIONS_ID_TOKEN_REQUEST_URL ..." >&2
           jwt="$(curl::api --max-time 5 --retry 3 \
             --header "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=${{ inputs.audience }}" | jq -Mcre .value)"
+            --get --data-urlencode "audience=${{ inputs.audience }}" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -Mcre .value)"
 
           # https://support.huaweicloud.com/api-iam5/AssumeAgency.html
+          # https://support.huaweicloud.com/api-iam5/AssumeAgencyWithOIDC.html
           echo '🌼 Requesting temporary credentials from Huawei Cloud STS ...' >&2
           payload="$(jq -McRne \
             --arg jwt "$jwt" \
@@ -166,13 +182,13 @@ runs:
             --data "$payload"
             "https://sts.${{ inputs.sts-region }}.myhuaweicloud.com/v5/agencies/assume"
 
-          echo '🔐 Masking credentials in logs ...' >&2
+          echo '🔐 Masking credentials in workflow run logs ...' >&2
           ak="$(jq -Mcre .credentials.access_key_id <<<"$res")"
           sk="$(jq -Mcre .credentials.secret_access_key <<<"$res")"
           st="$(jq -Mcre .credentials.security_token <<<"$res")"
           gh::mask "$ak" "$sk" "$st"
 
-          echo '📤 Outputing credentials and info ....' >&2
+          echo '📤 Generating action outputs ....' >&2
           gh::output ak <<<"$ak"
           gh::output sk <<<"$sk"
           gh::output st <<<"$st"
@@ -187,4 +203,4 @@ runs:
             gh::env::set "${{ inputs.env-st-name }}" <<<"$st"
           fi
 
-        } |& gh::group "🌼 Configure Huawei Cloud Credentials via OIDC for GitHub Actions"
+        } |& gh::group "🌼 Configure Huawei Cloud Credentials via OIDC"
