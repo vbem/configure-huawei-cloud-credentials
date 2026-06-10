@@ -1,4 +1,4 @@
-# 🌼 Configure Huawei Cloud Credentials via OIDC for GitHub Actions
+# 🌼 Configure Huawei Cloud short-lived credentials via OIDC for GitHub Actions
 
 [![🧪 Testing](https://github.com/vbem/configure-huawei-cloud-credentials/actions/workflows/test.yml/badge.svg)](https://github.com/vbem/configure-huawei-cloud-credentials/actions/workflows/test.yml)
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/vbem/configure-huawei-cloud-credentials?label=Release&logo=github)](https://github.com/vbem/configure-huawei-cloud-credentials/releases)
@@ -8,9 +8,13 @@
 
 ## About
 
-As a supplement to the lack of official action from Huawei Cloud, this action configures [temporary credentials](https://support.huaweicloud.com/usermanual-iam5/iam_01_1236.html) (**Access Key ID / Secret Access Key / Security Token**) for GitHub Actions by [exchanging a GitHub OIDC token](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers) with Huawei Cloud STS service. It lets workflows access Huawei Cloud resources without storing long-lived *Access Key ID / Secret Key* pairs in GitHub Secrets. This action is similar to [`aws-actions/configure-aws-credentials`](https://github.com/marketplace/actions/configure-aws-credentials-action-for-github-actions) and [`aliyun/configure-aliyun-credentials-action`](https://github.com/marketplace/actions/configure-alibaba-cloud-credentials-action-for-github-actions).
+As a supplement to the lack of official action from Huawei Cloud, this action configures [temporary credentials](https://support.huaweicloud.com/usermanual-iam5/iam_01_1236.html) (**Access Key ID / Secret Access Key / Security Token**) for GitHub Actions by [exchanging a GitHub OIDC token](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers) with Huawei Cloud Security Token Service (STS). It lets workflows access Huawei Cloud resources without storing long-lived *Access Key ID / Secret Key* pairs in GitHub Secrets. This action is similar to [`aws-actions/configure-aws-credentials`](https://github.com/marketplace/actions/configure-aws-credentials-action-for-github-actions) and [`aliyun/configure-aliyun-credentials-action`](https://github.com/marketplace/actions/configure-alibaba-cloud-credentials-action-for-github-actions).
 
-## Example usage
+<div align="center">
+  <img src="https://docs.github.com/assets/cb-63262/mw-1440/images/help/actions/oidc-architecture.webp" width="600" alt="OIDC Architecture">
+</div>
+
+## Example Usage
 
 ```yaml
 jobs:
@@ -21,14 +25,14 @@ jobs:
     permissions: {id-token: write, contents: read}
 
     steps:
-      - name: 🌼 Configure HW Cloud temporary credentials
+      - name: 🔑 Generate HW Cloud temporary credentials
         id: creds
         uses: vbem/configure-huawei-cloud-credentials@main
         with:
           provider-urn: iam::<account-id>:oidcProvider:<provider-name>
           agency-urn: iam::<account-id>:agency:<agency-name>
 
-      - name: 🔍 Print the action outputs
+      - name: 🔍 Print outputs of previous step
         env: {STEP_OUTPUT: "${{ toJson(steps.creds.outputs) }}"}
         run: jq -C <<<<"$STEP_OUTPUT"
 
@@ -66,13 +70,13 @@ ID | Type | Description | Example
 `ak` | String | Access Key ID of the temporary credential. | `HSTANO...........`
 `sk` | String | Secret Access Key of the temporary credential. | `EoWCQrr...........`
 `st` | String | Security Token of the temporary credential. | `hQpjbi1...........`
-`expiration` | Datetime | Expiration time of the temporary credential in ISO 8601 format. | `2022-09-07T03:27:51.158Z`
+`expiration` | Datetime | Expiration time of the temporary credential in RFC 3339 format. | `2022-09-07T03:27:51.158Z`
 `urn` | String | URN of the assumed agency. | `sts::<account-id>::assumed-agency:<agency-name>/<session-name>`
 `id` | String | Unique ID of the assumed agency. | `<agency-id>:<session-name>`
 
 ## HW Cloud IAM v5 Configuration
 
-Before using this action, you need to configure the OIDC provider and agency in Huawei Cloud IAM v5.
+Before using this action, you need to setup OIDC provider and agency in the [latest Huawei Cloud IAM v5](https://support.huaweicloud.com/productdesc-iam5/iam_01_1105.html).
 
 For [Identity Provider](https://console.huaweicloud.com/iam5/#/idp), the following settings are recommended:
 

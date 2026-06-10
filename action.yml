@@ -1,7 +1,8 @@
 ---
 name: configure-huawei-cloud-credentials
 author: "@vbem"
-description: 🌼 Configure Huawei Cloud Credentials via OIDC for GitHub Actions
+description: 🌼 OIDC based HW Cloud STS short-lived credentials
+  (Access Key ID / Secret Access Key / Security Token) configuration action
 branding: {icon: user-check, color: gray-dark}
 
 inputs:
@@ -57,19 +58,19 @@ inputs:
 outputs:
   ak:
     description: Access Key ID of the temporary credential.
-      String, in format of `HSTANO...........`.
+      String, e.g. `HSTANO...........`.
     value: ${{ steps.main.outputs.ak }}
   sk:
     description: Secret Access Key of the temporary credential.
-      String, in format of `EoWCQrr...........`.
+      String, e.g. `EoWCQrr...........`.
     value: ${{ steps.main.outputs.sk }}
   st:
     description: Security Token of the temporary credential.
-      String, in format of `hQpjbi1...........`.
+      String, e.g. `hQpjbi1...........`.
     value: ${{ steps.main.outputs.st }}
   expiration:
-    description: Expiration time of the temporary credential in ISO 8601 format.
-      Datetime, e.g. `2022-09-07T03:27:51.158Z`.
+    description: Expiration time of the temporary credential in RFC 3339 format.
+      Datetime, e.g. `2026-09-07T03:27:51.158Z`.
     value: ${{ steps.main.outputs.expiration }}
   urn:
     description: The URN of the assumed agency.
@@ -86,7 +87,7 @@ runs:
     - id: main
       shell: bash
       run: |-
-        # implementation details
+        # implementation details - configure-huawei-cloud-credentials
 
         # `--fail-with-body` only works since curl 7.76.0
         curl --fail-with-body -V &>/dev/null \
