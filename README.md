@@ -12,7 +12,7 @@
   <img src="https://docs.github.com/assets/cb-63262/mw-1440/images/help/actions/oidc-architecture.webp" width="600" alt="OIDC Architecture">
 </div>
 
-Huawei Cloud does not currently provide an official GitHub Action for OIDC-based credentials. This action fills that gap by configuring [temporary credentials](https://support.huaweicloud.com/usermanual-iam5/iam_01_1236.html) (**Access Key ID / Secret Access Key / Security Token**) for GitHub Actions, using a [GitHub OIDC token](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers) exchanged with Huawei Cloud Security Token Service (STS). Workflows can access Huawei Cloud resources without storing long-lived *Access Key ID / Secret Key* pairs in GitHub Secrets. It is similar to these actions for other clouds and platforms:
+Huawei Cloud does not currently provide an official GitHub Action for OIDC-based credentials. This action fills that gap by configuring [temporary credentials](https://support.huaweicloud.com/usermanual-iam5/iam_01_1236.html) (**Access Key ID / Secret Access Key / Security Token**) for GitHub Actions, using a [GitHub OIDC token](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers) exchanged with Huawei Cloud Security Token Service (STS). Workflows can access Huawei Cloud resources without storing long-lived *Access Key ID / Secret Key* pairs in GitHub Secrets. Comparable actions for other clouds and platforms include:
 
 - [`aws-actions/configure-aws-credentials`](https://github.com/marketplace/actions/configure-aws-credentials-action-for-github-actions)
 - [`azure/login`](https://github.com/marketplace/actions/azure-login)
@@ -97,7 +97,7 @@ For [***IAM Identity Provider***](https://console.huaweicloud.com/iam5/#/idp), t
 Name | Recommended Value | Description
 --- | --- | ---
 Type | `OIDC` | The identity provider type.
-Identity Provider Name | `github_com` | A name that distinguishes github.com or a GHES instance as the provider.
+Identity Provider Name | `github_com` | A name that identifies github.com or a GHES instance as the provider.
 Identity Provider URL | `https://token.actions.githubusercontent.com` | The [OIDC token issuer for github.com](https://docs.github.com/en/actions/reference/security/oidc). For [GitHub Enterprise Server (GHES)](https://docs.github.com/en/enterprise-server@latest/actions/reference/security/oidc), use `https://GHES_HOSTNAME/_services/token`.
 Audience | `sts.huaweicloud.com` | The [OIDC token audience](https://docs.github.com/en/actions/reference/security/oidc). It must match the `audience` input of this action.
 Description | The URL of this action | Helps identify how this provider is used.
@@ -109,11 +109,9 @@ Name | Recommended Value | Description
 Agency Name | `gh-<usage-desc>` | A name that identifies this agency's purpose, e.g. `gh-terraform-foobar-prod`.
 Agency Type | Custom trust policy | A custom trust policy can bind the agency to a specific OIDC provider and define flexible trust conditions.
 Description | The URL of the OIDC identity provider | Helps identify how this agency is used.
-Authorized Policies | Usage based | Attach least-privilege [policies](https://support.huaweicloud.com/usermanual-iam5/iam_01_1159.html) based on your use case.
+Authorized Policies | As needed | Attach only the least-privilege [policies](https://support.huaweicloud.com/usermanual-iam5/iam_01_1159.html) required for your use case.
 
-The [***Trust Policy*** of an IAM agency](https://support.huaweicloud.com/usermanual-iam5/iam_01_0915.html#section2) controls who can assume the agency and under what conditions. The sample below allows GitHub Actions workflows in a specific repository to assume the agency. You can further restrict the [`oidc:sub` claim](https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims) by organization, repository, branch, tag, environment, or other workflow context.
-
-Note that GitHub's [*Immutable Subject Claims* feature](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims) may change the `oidc:sub` format on github.com, but not on GHES, for repositories created, renamed, or transferred after July 15, 2026. Existing repositories can enable or disable this feature at the repository level in the GitHub UI (Settings > Actions > OIDC > Use immutable subject claim).
+An [IAM agency's ***Trust Policy***](https://support.huaweicloud.com/usermanual-iam5/iam_01_0915.html#section2) controls who can assume the agency and under what conditions. The sample below allows GitHub Actions workflows in a specific repository to assume the agency. You can further restrict the [`oidc:sub` claim](https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims) by organization, repository, branch, tag, environment, or other workflow context. Note that GitHub's [*Immutable Subject Claims* feature](https://docs.github.com/en/actions/reference/security/oidc#immutable-subject-claims) may change the `oidc:sub` format on github.com, but not on GHES, for repositories created, renamed, or transferred after July 15, 2026. Existing repositories can enable or disable this feature at the repository level in the GitHub UI (Settings > Actions > OIDC > Use immutable subject claim).
 
 ```jsonc
 {
@@ -128,14 +126,14 @@ Note that GitHub's [*Immutable Subject Claims* feature](https://docs.github.com/
           "oidc:sub": "repo:<github-owner-or-org>/<github-repo-id>:*"
         },
         "StringEquals": {
-          // `oidc:aud` must be consistent with `audience`
+          // `oidc:aud` must match `audience`
           "oidc:aud": ["sts.huaweicloud.com"],
-          // `oidc:iss` must be consistent with the OIDC token issuer
+          // `oidc:iss` must match the OIDC token issuer
           "oidc:iss": ["https://token.actions.githubusercontent.com"]
         }
       },
       "Principal": {
-        // `Federated` must be consistent with the OIDC provider URN
+        // `Federated` must match the OIDC provider URN
         "Federated": ["<OIDC-provider-URN>"]
       }
     }
