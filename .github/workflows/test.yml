@@ -23,7 +23,7 @@ jobs:
     permissions: {id-token: write, contents: read}
 
     steps:
-      - name: 🔑 Generate HW Cloud temporary credentials
+      - name: 🔑 Generate Huawei Cloud temporary credentials
         id: creds
         uses: ./
         with:
@@ -31,10 +31,10 @@ jobs:
           agency-urn: iam::<account-id>:agency:<agency-name>
 
       - name: 🔍 Print outputs of previous step
-        env: {STEP_OUTPUT: "${{ toJson(steps.creds.outputs) }}"}
-        run: jq -C <<<<"$STEP_OUTPUT"
+        env: {STEP_OUTPUTS: "${{ toJson(steps.creds.outputs) }}"}
+        run: jq -C <<<<"$STEP_OUTPUTS"
 
-      - name: 🖥️ Setup HW Cloud KooCLI for testing
+      - name: 🖥️ Setup Huawei Cloud KooCLI for testing
         uses: vbem/setup-hcloud@main
 
       - name: 🧪 Test temporary credentials using KooCLI
