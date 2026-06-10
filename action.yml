@@ -1,7 +1,7 @@
 ---
 name: configure-huawei-cloud-credentials
 author: "@vbem"
-description: 🌼 OIDC based HW Cloud STS short-lived credentials
+description: 🌼 OIDC based Huawei Cloud STS credentials
   (Access Key ID / Secret Access Key / Security Token) configuration action
 branding: {icon: user-check, color: gray-dark}
 

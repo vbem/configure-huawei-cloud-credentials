@@ -23,21 +23,21 @@ jobs:
     permissions: {id-token: write, contents: read}
 
     steps:
-      - name: 🌼 Configure HW Cloud temporary credentials
+      - name: 🔑 Generate HW Cloud temporary credentials
         id: creds
-        uses: vbem/configure-huawei-cloud-credentials@main
+        uses: ./
         with:
           provider-urn: iam::<account-id>:oidcProvider:<provider-name>
           agency-urn: iam::<account-id>:agency:<agency-name>
 
-      - name: 🔍 Print the action outputs
+      - name: 🔍 Print outputs of previous step
         env: {STEP_OUTPUT: "${{ toJson(steps.creds.outputs) }}"}
         run: jq -C <<<<"$STEP_OUTPUT"
 
       - name: 🖥️ Setup HW Cloud KooCLI for testing
         uses: vbem/setup-hcloud@main
 
-      - name: 🧪 Test temporary credentials by HW Cloud STS service using KooCLI
+      - name: 🧪 Test temporary credentials using KooCLI
         run: |-
           hcloud sts GetCallerIdentity --cli-region=cn-east-3 \
             --cli-access-key="${HUAWEICLOUD_SDK_AK}" \
