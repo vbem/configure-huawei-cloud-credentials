@@ -8,18 +8,27 @@
 
 ⚠️⚠️⚠️ ***This action will become publicly available in August 2026, following the release of Huawei Cloud IAM/STS v5 OIDC related APIs.***
 
-As a supplement to the lack of official action from Huawei Cloud, this action configures [temporary credentials](https://support.huaweicloud.com/usermanual-iam5/iam_01_1236.html) (**Access Key ID / Secret Access Key / Security Token**) for GitHub Actions by [exchanging a GitHub OIDC token](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers) with Huawei Cloud Security Token Service (STS). It lets workflows access Huawei Cloud resources without storing long-lived *Access Key ID / Secret Key* pairs in GitHub Secrets. This action is similar to [`aws-actions/configure-aws-credentials`](https://github.com/marketplace/actions/configure-aws-credentials-action-for-github-actions) and [`aliyun/configure-aliyun-credentials-action`](https://github.com/marketplace/actions/configure-alibaba-cloud-credentials-action-for-github-actions).
-
 <div align="center">
   <img src="https://docs.github.com/assets/cb-63262/mw-1440/images/help/actions/oidc-architecture.webp" width="600" alt="OIDC Architecture">
 </div>
+
+As a supplement to the lack of official action from Huawei Cloud, this action configures [temporary credentials](https://support.huaweicloud.com/usermanual-iam5/iam_01_1236.html) (**Access Key ID / Secret Access Key / Security Token**) for GitHub Actions by [exchanging a GitHub OIDC token](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers) with Huawei Cloud Security Token Service (STS). It lets workflows access Huawei Cloud resources without storing long-lived *Access Key ID / Secret Key* pairs in GitHub Secrets. This action for Huawei Cloud is similar to following actions for other clouds or platforms:
+
+- [`aws-actions/configure-aws-credentials`](https://github.com/marketplace/actions/configure-aws-credentials-action-for-github-actions)
+- [`azure/login`](https://github.com/marketplace/actions/azure-login)
+- [`google-github-actions/auth`](https://github.com/marketplace/actions/authenticate-to-google-cloud)
+- [`aliyun/configure-aliyun-credentials-action`](https://github.com/marketplace/actions/configure-alibaba-cloud-credentials-action-for-github-actions)
+- [`everpcpc/tencentcloud-oidc-auth`](https://github.com/marketplace/actions/authenticate-to-tencent-cloud)
+- [`hashicorp/vault-action`](https://github.com/marketplace/actions/hashicorp-vault)
+- [`jfrog/setup-jfrog-cli`](https://github.com/marketplace/actions/setup-jfrog-cli)
+- [`pypa/gh-action-pypi-publish`](https://github.com/marketplace/actions/pypi-publish)
 
 ## Example Usage
 
 ```yaml
 jobs:
   example:
-    runs-on: ubuntu-slime
+    runs-on: ubuntu-slim
     timeout-minutes: 1
     defaults: {run: {shell: bash}}
     permissions: {id-token: write, contents: read}
@@ -102,7 +111,7 @@ Agency Type | Custom trust policy | A "Trust Agency" allows binding to a specifi
 Description | The URL of the OIDC Identity provider | It can help you quickly identify the usage of this agency in the future.
 Authorized Poilies | Usage based | Attach the least-privilege [policies](https://support.huaweicloud.com/usermanual-iam5/iam_01_1159.html) based on your usage.
 
-The [***Trust Policy*** of an IAM agency](https://support.huaweicloud.com/usermanual-iam5/iam_01_0915.html#section2) controls who can assume this agency and under what conditions. Following is a sample trust policy, which allows GitHub Actions workflows in a specific repository to assume this agency. Based on needs, it can further restrict the [`oidc:sub` claim](https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims) to fine grained organization / repository / branch / tag / environment / etc. Please note the [*Immutable Subject Claims* feature](https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims) may influence your `oidc:sub` claim format on github.com (not GHES) for repositories created or renamed after July 15, 2026. However, it can opt in/off this feature on repository level on GitHub UI (Settings -> Actions -> OIDC -> Use immutable subject claim).
+The [***Trust Policy*** of an IAM agency](https://support.huaweicloud.com/usermanual-iam5/iam_01_0915.html#section2) controls who can assume this agency and under what conditions. Following is a sample trust policy, which allows GitHub Actions workflows in a specific repository to assume this agency. Based on needs, it can further restrict the [`oidc:sub` claim](https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims) to fine grained organization / repository / branch / tag / environment / etc. Please note the [*Immutable Subject Claims* feature](https://docs.github.com/en/actions/reference/security/oidc#example-subject-claims) may influence your `oidc:sub` claim format of github.com (not GHES) for repositories created or renamed after July 15, 2026. However, it can opt in/off this feature on repository level on GitHub UI (Settings -> Actions -> OIDC -> Use immutable subject claim).
 
 ```jsonc
 {
