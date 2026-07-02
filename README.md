@@ -121,7 +121,7 @@ An [IAM agency's ***Trust Policy***](https://support.huaweicloud.com/usermanual-
       "Action": ["sts:agencies:assumeWithOIDC"],
       "Effect": "Allow",
       "Condition": {
-        "StringLike": {
+        "StringMatch": {
           // `oidc:sub` supports org/repo/branch/tag/environment/etc.
           "oidc:sub": "repo:<github-owner-or-org>/<github-repo-id>:*"
         },

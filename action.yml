@@ -163,7 +163,7 @@ runs:
           # https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers
           # https://docs.github.com/en/actions/reference/security/oidc
           echo "🐙 Requesting GitHub's OIDC JWT from $ACTIONS_ID_TOKEN_REQUEST_URL" >&2
-          jwt="$(curl::api --max-time 5 --retry 3 \
+          jwt="$(curl::api --max-time 10 --retry 3 \
             --header "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             --get --data-urlencode "audience=${{ inputs.audience }}" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -Mcre .value)"
@@ -181,7 +181,7 @@ runs:
             '{id_token:$id_token, provider_urn:$provider_urn, agency_urn:$agency_urn,
             agency_session_name:$agency_session_name, duration_seconds:$duration_seconds}')"
           jq -C <<<"$payload" >&2
-          res="$(curl::api --max-time 5 --retry 3 --header 'Content-Type: application/json' \
+          res="$(curl::api --max-time 10 --retry 3 --header 'Content-Type: application/json' \
             --data "$payload" "$sts_api")" || echo "$res" >&2
 
           echo '🔐 Masking credentials in workflow run logs ...' >&2
