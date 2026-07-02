@@ -180,8 +180,9 @@ runs:
             --argjson duration_seconds "${{ inputs.duration-seconds }}" \
             '{id_token:$id_token, provider_urn:$provider_urn, agency_urn:$agency_urn,
             agency_session_name:$agency_session_name, duration_seconds:$duration_seconds}')"
+          jq -C <<<"$payload" >&2
           res="$(curl::api --max-time 5 --retry 3 --header 'Content-Type: application/json' \
-            --data "$payload" "$sts_api")"
+            --data "$payload" "$sts_api")" || echo "$res" >&2
 
           echo '🔐 Masking credentials in workflow run logs ...' >&2
           ak="$(jq -Mcre .credentials.access_key_id <<<"$res")"
