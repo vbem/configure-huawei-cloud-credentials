@@ -176,12 +176,12 @@ runs:
             --arg agency_urn "${{ inputs.agency-urn }}" \
             --arg agency_session_name "${{ inputs.session-name }}" \
             --argjson duration_seconds "${{ inputs.duration-seconds }}" \
-            '{id_token:$id_token, provider_urn:$provider_urn, agency_urn:$agency_urn, agency_session_name:$agency_session_name, duration_seconds:$duration_seconds}'\
-          )"
+            '{id_token:$id_token, provider_urn:$provider_urn, agency_urn:$agency_urn,
+            agency_session_name:$agency_session_name, duration_seconds:$duration_seconds}')"
           res="$(curl::api --max-time 5 --retry 3 \
             --header 'Content-Type: application/json' \
             --data "$payload" \
-            "https://sts.${{ inputs.sts-region }}.myhuaweicloud.com/v5/agencies/assume-with-oidc"
+            "https://sts.${{ inputs.sts-region }}.myhuaweicloud.com/v5/agencies/assume-with-oidc")"
 
           echo '🔐 Masking credentials in workflow run logs ...' >&2
           ak="$(jq -Mcre .credentials.access_key_id <<<"$res")"
