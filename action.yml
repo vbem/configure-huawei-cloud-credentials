@@ -163,7 +163,7 @@ runs:
 
           # https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers
           # https://docs.github.com/en/actions/reference/security/oidc
-          echo 🐙 Requesting GitHub OIDC JWT from ACTIONS_ID_TOKEN_REQUEST_URL' >&2
+          echo '🐙 Requesting GitHub OIDC JWT from ACTIONS_ID_TOKEN_REQUEST_URL' >&2
           jwt="$(curl::api --max-time 10 --retry 3 \
             --header "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             --get --data-urlencode "audience=${{ inputs.audience }}" \
