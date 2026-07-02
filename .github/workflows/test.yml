@@ -36,7 +36,7 @@ jobs:
 
       - name: 🔍 Print outputs of previous step
         env: {STEP_OUTPUTS: "${{ toJson(steps.creds.outputs) }}"}
-        run: jq -C <<<<"$STEP_OUTPUTS"
+        run: jq -C <<<"$STEP_OUTPUTS"
 
       - name: 🖥️ Setup Huawei Cloud KooCLI for testing
         uses: vbem/setup-hcloud@main
