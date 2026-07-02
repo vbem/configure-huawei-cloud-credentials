@@ -68,9 +68,9 @@ ID | Type | Default | Description
 `session-name` | String | `GitHubActions` | The agency session name.
 `duration-seconds` | Number | `900` | The agency session duration, from `900` seconds (15 minutes) to `43200` seconds (12 hours).
 `export-env` | Boolean | `true` | Whether to export the [temporary credentials as environment variables](https://github.com/huaweicloud/huaweicloud-sdk-java-v3#241-environment-variables-top) for subsequent workflow steps.
-`env-ak-name` | String | `HUAWEICLOUD_SDK_AK` | The environment variable name used to export the Access Key ID.
-`env-sk-name` | String | `HUAWEICLOUD_SDK_SK` | The environment variable name used to export the Secret Access Key.
-`env-st-name` | String | `HUAWEICLOUD_SDK_SECURITY_TOKEN` | The environment variable name used to export the Security Token.
+`env-ak-name` | String | `HUAWEICLOUD_SDK_AK` | The environment variable name used to export the Access Key ID when `export-env` is `true`.
+`env-sk-name` | String | `HUAWEICLOUD_SDK_SK` | The environment variable name used to export the Secret Access Key when `export-env` is `true`.
+`env-st-name` | String | `HUAWEICLOUD_SDK_SECURITY_TOKEN` | The environment variable name used to export the Security Token when `export-env` is `true`.
 `sts-region` | String | `cn-east-3` | The [Huawei Cloud STS API region](https://support.huaweicloud.com/api-iam5/iam_02_1101.html) to use. Choose a region that is geographically close to your runner.
 `api-timeout` | Number | `10` | The timeout seconds for API calls to GitHub and Huawei Cloud STS.
 `api-retry` | Number | `2` | The retry times for API calls to GitHub and Huawei Cloud STS.
@@ -138,3 +138,9 @@ An [IAM agency's ***Trust Policy***](https://support.huaweicloud.com/usermanual-
   ]
 }
 ```
+
+## Contribute
+
+- PR is welcome!
+- Donations are NOT needed.
+- If you like this action, please consider giving it a ⭐️ — it helps others discover this tool.
