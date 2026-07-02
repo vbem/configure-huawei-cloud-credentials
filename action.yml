@@ -162,14 +162,16 @@ runs:
 
           # https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers
           # https://docs.github.com/en/actions/reference/security/oidc
-          echo "🐙 Requesting GitHub's OIDC JWT from $ACTIONS_ID_TOKEN_REQUEST_URL ..." >&2
+          echo "🐙 Requesting GitHub's OIDC JWT from $ACTIONS_ID_TOKEN_REQUEST_URL" >&2
           jwt="$(curl::api --max-time 5 --retry 3 \
             --header "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             --get --data-urlencode "audience=${{ inputs.audience }}" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -Mcre .value)"
 
           # https://support.huaweicloud.com/api-iam5/AssumeAgencyWithOIDC.html
-          echo '🌼 Requesting temporary credentials from Huawei Cloud STS ...' >&2
+          sts_api="https://sts.${{ inputs.sts-region }}.myhuaweicloud.com"
+          sts_api+='/v5/agencies/assume-with-oidc'
+          echo "🌼 Requesting temporary credentials from $sts_api" >&2
           payload="$(jq -McRne \
             --arg id_token "$jwt" \
             --arg provider_urn "${{ inputs.provider-urn }}" \
@@ -178,10 +180,8 @@ runs:
             --argjson duration_seconds "${{ inputs.duration-seconds }}" \
             '{id_token:$id_token, provider_urn:$provider_urn, agency_urn:$agency_urn,
             agency_session_name:$agency_session_name, duration_seconds:$duration_seconds}')"
-          res="$(curl::api --max-time 5 --retry 3 \
-            --header 'Content-Type: application/json' \
-            --data "$payload" \
-            "https://sts.${{ inputs.sts-region }}.myhuaweicloud.com/v5/agencies/assume-with-oidc")"
+          res="$(curl::api --max-time 5 --retry 3 --header 'Content-Type: application/json' \
+            --data "$payload" "$sts_api")"
 
           echo '🔐 Masking credentials in workflow run logs ...' >&2
           ak="$(jq -Mcre .credentials.access_key_id <<<"$res")"
