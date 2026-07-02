@@ -50,17 +50,17 @@ inputs:
     required: false
     default: HUAWEICLOUD_SDK_SECURITY_TOKEN
   sts-region:
-    description: The region of HW Cloud STS API for requesting.
-      Optional, default to `cn-north-4`.
+    description: The region of Huawei Cloud STS API for requesting.
+      Optional, default to `cn-east-3`.
     required: false
-    default: cn-north-4
+    default: cn-east-3
   api-timeout:
-    description: The timeout seconds for API calls to GitHub and HW STS.
+    description: The timeout seconds for API calls to GitHub and Huawei Cloud STS.
       Optional, default to `10`.
     required: false
     default: "10"
   api-retry:
-    description: The retry times for API calls to GitHub and HW STS.
+    description: The retry times for API calls to GitHub and Huawei Cloud STS.
       Optional, default to `2`.
     required: false
     default: "2"
