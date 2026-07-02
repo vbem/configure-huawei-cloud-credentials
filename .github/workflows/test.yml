@@ -27,8 +27,8 @@ jobs:
         id: creds
         uses: ./
         with:
-          provider-urn: iam::<account-id>:oidcProvider:<provider-name>
-          agency-urn: iam::<account-id>:agency:<agency-name>
+          provider-urn: iam::019e8bf561d17480b97b8215caafc3a1:oidcProvider:github_com
+          agency-urn: iam::019e8bf561d17480b97b8215caafc3a1:agency:gh-oidc-test
 
       - name: 🔍 Print outputs of previous step
         env: {STEP_OUTPUTS: "${{ toJson(steps.creds.outputs) }}"}

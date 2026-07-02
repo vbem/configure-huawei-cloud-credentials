@@ -168,20 +168,20 @@ runs:
             --get --data-urlencode "audience=${{ inputs.audience }}" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -Mcre .value)"
 
-          # https://support.huaweicloud.com/api-iam5/AssumeAgency.html
           # https://support.huaweicloud.com/api-iam5/AssumeAgencyWithOIDC.html
           echo '🌼 Requesting temporary credentials from Huawei Cloud STS ...' >&2
           payload="$(jq -McRne \
-            --arg jwt "$jwt" \
-            --arg prov "${{ inputs.provider-urn }}" \
-            --arg agency "${{ inputs.agency-urn }}" \
-            --arg session "${{ inputs.session-name }}" \
-            --argjson duration "${{ inputs.duration-seconds }}" \
-            '{"duration_seconds":$duration,"agency_urn":$agency,"agency_session_name":$session}')"
+            --arg id_token "$jwt" \
+            --arg provider_urn "${{ inputs.provider-urn }}" \
+            --arg agency_urn "${{ inputs.agency-urn }}" \
+            --arg agency_session_name "${{ inputs.session-name }}" \
+            --argjson duration_seconds "${{ inputs.duration-seconds }}" \
+            '{id_token:$id_token, provider_urn:$provider_urn, agency_urn:$agency_urn, agency_session_name:$agency_session_name, duration_seconds:$duration_seconds}'\
+          )"
           res="$(curl::api --max-time 5 --retry 3 \
             --header 'Content-Type: application/json' \
-            --data "$payload"
-            "https://sts.${{ inputs.sts-region }}.myhuaweicloud.com/v5/agencies/assume"
+            --data "$payload" \
+            "https://sts.${{ inputs.sts-region }}.myhuaweicloud.com/v5/agencies/assume-with-oidc"
 
           echo '🔐 Masking credentials in workflow run logs ...' >&2
           ak="$(jq -Mcre .credentials.access_key_id <<<"$res")"
