@@ -89,16 +89,6 @@ runs:
       run: |-
         # implementation details - configure-huawei-cloud-credentials
 
-        # check `curl` CLI
-        command -v curl &>/dev/null || {
-          echo '❌ curl is required but not found in PATH.' >&2
-          exit 1
-        }
-        # `--fail-with-body` only works since curl 7.76.0
-        curl --fail-with-body -V &>/dev/null && _CURL_FAIL=--fail-with-body || _CURL_FAIL=--fail
-        echo "🐚 Using curl $_CURL_FAIL for API calls" >&2
-        curl --version >&2
-
         # Curl with common options for API calls
         #   $@: other arguments of `curl`, see https://curl.se/docs/manpage.html
         #   $?: 0 if successful and none-zero otherwise
@@ -161,9 +151,19 @@ runs:
         }
 
         {
+          # check `curl` CLI
+          command -v curl &>/dev/null || {
+            echo '❌ curl is required but not found in PATH.' >&2
+            exit 1
+          }
+          # `--fail-with-body` only works since curl 7.76.0
+          curl --fail-with-body -V &>/dev/null && _CURL_FAIL=--fail-with-body || _CURL_FAIL=--fail
+          echo "🐚 Using curl $_CURL_FAIL for API calls" >&2
+          curl --version >&2
+
           # https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers
           # https://docs.github.com/en/actions/reference/security/oidc
-          echo "🐙 Requesting GitHub's OIDC JWT from $ACTIONS_ID_TOKEN_REQUEST_URL" >&2
+          echo '🐙 Requesting GitHub's OIDC JWT from ACTIONS_ID_TOKEN_REQUEST_URL' >&2
           jwt="$(curl::api --max-time 10 --retry 3 \
             --header "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             --get --data-urlencode "audience=${{ inputs.audience }}" \
@@ -173,7 +173,7 @@ runs:
           sts_api="https://sts.${{ inputs.sts-region }}.myhuaweicloud.com"
           sts_api+='/v5/agencies/assume-with-oidc'
           echo "🌼 Requesting temporary credentials from $sts_api" >&2
-          payload="$(jq -McRne \
+          req="$(jq -McRne \
             --arg id_token "$jwt" \
             --arg provider_urn "${{ inputs.provider-urn }}" \
             --arg agency_urn "${{ inputs.agency-urn }}" \
@@ -181,29 +181,36 @@ runs:
             --argjson duration_seconds "${{ inputs.duration-seconds }}" \
             '{id_token:$id_token, provider_urn:$provider_urn, agency_urn:$agency_urn,
             agency_session_name:$agency_session_name, duration_seconds:$duration_seconds}')"
-          jq -C <<<"$payload" >&2
+          echo '📦 Request body:' >&2
+          jq -C <<<"$req" >&2
+          # response
           res="$(curl::api --max-time 10 --retry 3 --header 'Content-Type: application/json' \
-            --data "$payload" "$sts_api")" || echo "$res" >&2
+            --data "$req" "$sts_api")" || {
+              echo '❌ Failed to call STS API with response:' >&2
+              echo "$res" >&2
+              exit 1
+            }
 
-          echo '🔐 Masking credentials in workflow run logs ...' >&2
+          echo '📤 Generating action outputs ....' >&2
           ak="$(jq -Mcre .credentials.access_key_id <<<"$res")"
           sk="$(jq -Mcre .credentials.secret_access_key <<<"$res")"
           st="$(jq -Mcre .credentials.security_token <<<"$res")"
           gh::mask "$ak" "$sk" "$st"
-
-          echo '📤 Generating action outputs ....' >&2
           gh::output ak <<<"$ak"
           gh::output sk <<<"$sk"
           gh::output st <<<"$st"
           jq -Mcre .credentials.expiration <<<"$res" | gh::output expiration
           jq -Mcre .assumed_agency.urn <<<"$res" | gh::output urn
           jq -Mcre .assumed_agency.id <<<"$res" | gh::output id
+          cat "$GITHUB_OUTPUT" >&2
 
           if [[ "${{ inputs.export-env }}" == 'true' ]]; then
             echo '⚙️ Exporting credentials as env vars for subsequent steps ...' >&2
             gh::env::set "${{ inputs.env-ak-name }}" <<<"$ak"
             gh::env::set "${{ inputs.env-sk-name }}" <<<"$sk"
             gh::env::set "${{ inputs.env-st-name }}" <<<"$st"
+            echo '${{ inputs.env-ak-name }}' >&2
+            echo '${{ inputs.env-sk-name }}' >&2
+            echo '${{ inputs.env-st-name }}' >&2
           fi
-
         } |& gh::group "🌼 Configure Huawei Cloud Credentials via OIDC"
