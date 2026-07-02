@@ -89,15 +89,21 @@ runs:
       run: |-
         # implementation details - configure-huawei-cloud-credentials
 
+        # check `curl` CLI
+        command -v curl &>/dev/null || {
+          echo '❌ curl is required but not found in PATH.' >&2
+          exit 1
+        }
         # `--fail-with-body` only works since curl 7.76.0
-        curl --fail-with-body -V &>/dev/null \
-          && _CURL_FAIL_OPT=--fail-with-body || _CURL_FAIL_OPT=--fail
+        curl --fail-with-body -V &>/dev/null && _CURL_FAIL=--fail-with-body || _CURL_FAIL=--fail
+        echo "🐚 Using curl $_CURL_FAIL for API calls" >&2
+        curl --version >&2
 
         # Curl with common options for API calls
         #   $@: other arguments of `curl`, see https://curl.se/docs/manpage.html
         #   $?: 0 if successful and none-zero otherwise
         function curl::api {
-            curl --location "$_CURL_FAIL_OPT" --silent --show-error --compressed "$@"
+            curl --location "$_CURL_FAIL" --silent --show-error --compressed "$@"
         }
 
         # Group stdin to log in stderr with a title
@@ -155,11 +161,6 @@ runs:
         }
 
         {
-          command -v curl &>/dev/null || {
-            echo '❌ curl is required but not found in PATH.' >&2
-            exit 1
-          }
-
           # https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers
           # https://docs.github.com/en/actions/reference/security/oidc
           echo "🐙 Requesting GitHub's OIDC JWT from $ACTIONS_ID_TOKEN_REQUEST_URL" >&2
