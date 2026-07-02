@@ -6,13 +6,11 @@
 
 ## About
 
-⚠️⚠️⚠️ ***This action will become publicly available in August 2026, after Huawei Cloud releases the IAM/STS v5 OIDC APIs.***
-
 <div align="center">
   <img src="https://docs.github.com/assets/cb-63262/mw-1440/images/help/actions/oidc-architecture.webp" width="600" alt="OIDC Architecture">
 </div>
 
-Huawei Cloud does not currently provide an official GitHub Action for OIDC-based credentials. This action fills that gap by configuring [temporary credentials](https://support.huaweicloud.com/usermanual-iam5/iam_01_1236.html) (**Access Key ID / Secret Access Key / Security Token**) for GitHub Actions, using a [GitHub OIDC token](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers) exchanged with Huawei Cloud Security Token Service (STS). Workflows can access Huawei Cloud resources without storing long-lived *Access Key ID / Secret Key* pairs in GitHub Secrets. Comparable actions for other clouds and platforms include:
+Huawei Cloud does not currently provide an official GitHub Action for OIDC-based credentials. This action fills that gap by configuring [temporary credentials](https://support.huaweicloud.com/usermanual-iam5/iam_01_1236.html) (**Access Key ID / Secret Access Key / Security Token**) for GitHub Actions, using a [GitHub OIDC token](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers) exchanged with [Huawei Cloud Security Token Service (STS)](https://support.huaweicloud.com/api-iam5/AssumeAgencyWithOIDC.html). Workflows can access Huawei Cloud resources without storing long-lived *Access Key ID / Secret Key* pairs in GitHub Secrets. Comparable actions for other clouds and platforms include:
 
 - [`aws-actions/configure-aws-credentials`](https://github.com/marketplace/actions/configure-aws-credentials-action-for-github-actions)
 - [`azure/login`](https://github.com/marketplace/actions/azure-login)
