@@ -54,6 +54,16 @@ inputs:
       Optional, default to `cn-north-4`.
     required: false
     default: cn-north-4
+  api-timeout:
+    description: The timeout seconds for API calls to GitHub and HW STS.
+      Optional, default to `10`.
+    required: false
+    default: "10"
+  api-retry:
+    description: The retry times for API calls to GitHub and HW STS.
+      Optional, default to `2`.
+    required: false
+    default: "2"
 
 outputs:
   ak:
@@ -93,7 +103,8 @@ runs:
         #   $@: other arguments of `curl`, see https://curl.se/docs/manpage.html
         #   $?: 0 if successful and none-zero otherwise
         function curl::api {
-            curl --location "$_CURL_FAIL" --silent --show-error --compressed "$@"
+            curl --location "$_CURL_FAIL" --silent --show-error --compressed \
+            --max-time "${{ inputs.api-timeout }}" --retry "${{ inputs.api-retry }}" "$@"
         }
 
         # Group stdin to log in stderr with a title
@@ -164,8 +175,7 @@ runs:
           # https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-cloud-providers
           # https://docs.github.com/en/actions/reference/security/oidc
           echo '🐙 Requesting GitHub OIDC JWT from ACTIONS_ID_TOKEN_REQUEST_URL' >&2
-          jwt="$(curl::api --max-time 10 --retry 3 \
-            --header "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          jwt="$(curl::api --header "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
             --get --data-urlencode "audience=${{ inputs.audience }}" \
             "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -Mcre .value)"
 
@@ -184,8 +194,8 @@ runs:
           echo '📦 Request body:' >&2
           jq -C <<<"$req" >&2
           # response
-          res="$(curl::api --max-time 10 --retry 3 --header 'Content-Type: application/json' \
-            --data "$req" "$sts_api")" || {
+          res="$(curl::api --header 'Content-Type: application/json' --data "$req" "$sts_api")" \
+            || {
               echo '❌ Failed to call STS API with response:' >&2
               echo "$res" >&2
               exit 1
