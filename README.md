@@ -32,7 +32,7 @@ jobs:
     steps:
       - name: 🔑 Generate Huawei Cloud temporary credentials
         id: creds
-        uses: vbem/configure-huawei-cloud-credentials@main
+        uses: vbem/configure-huawei-cloud-credentials@hash
         with:
           provider-urn: iam::<account-id>:oidcProvider:<provider-name>
           agency-urn: iam::<account-id>:agency:<agency-name>
@@ -42,7 +42,7 @@ jobs:
         run: jq -C <<<"$STEP_OUTPUTS"
 
       - name: 🖥️ Setup Huawei Cloud KooCLI for testing
-        uses: vbem/setup-hcloud@main
+        uses: vbem/setup-hcloud@hash
 
       - name: 🧪 Test temporary credentials using KooCLI
         run: |-
@@ -71,7 +71,7 @@ ID | Type | Default | Description
 `env-ak-name` | String | `HUAWEICLOUD_SDK_AK` | The environment variable name used to export the Access Key ID.
 `env-sk-name` | String | `HUAWEICLOUD_SDK_SK` | The environment variable name used to export the Secret Access Key.
 `env-st-name` | String | `HUAWEICLOUD_SDK_SECURITY_TOKEN` | The environment variable name used to export the Security Token.
-`sts-region` | String | `cn-east-3` | The [Huawei Cloud STS API region](https://support.huaweicloud.com/api-iam5/iam_02_1101.html) to use.
+`sts-region` | String | `cn-east-3` | The [Huawei Cloud STS API region](https://support.huaweicloud.com/api-iam5/iam_02_1101.html) to use. Choose a region that is geographically close to your runner.
 `api-timeout` | Number | `10` | The timeout seconds for API calls to GitHub and Huawei Cloud STS.
 `api-retry` | Number | `2` | The retry times for API calls to GitHub and Huawei Cloud STS.
 
