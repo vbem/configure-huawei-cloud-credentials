@@ -27,8 +27,6 @@ Huawei Cloud does not currently provide an official GitHub Action for OIDC-based
 jobs:
   example:
     runs-on: ubuntu-slim
-    timeout-minutes: 1
-    defaults: {run: {shell: bash}}
     permissions: {id-token: write, contents: read}
 
     steps:
@@ -41,7 +39,7 @@ jobs:
 
       - name: 🔍 Print outputs of previous step
         env: {STEP_OUTPUTS: "${{ toJson(steps.creds.outputs) }}"}
-        run: jq -C <<<<"$STEP_OUTPUTS"
+        run: jq -C <<<"$STEP_OUTPUTS"
 
       - name: 🖥️ Setup Huawei Cloud KooCLI for testing
         uses: vbem/setup-hcloud@main
@@ -64,8 +62,8 @@ Notes:
 
 ID | Type | Default | Description
 --- | --- | --- | ---
-`provider-urn` | String | Required | The Huawei Cloud IAM v5 OIDC provider URN, in the format `iam::<account-id>:oidcProvider:<provider-name>`.
-`agency-urn` | String | Required | The Huawei Cloud IAM v5 agency URN to assume, in the format `iam::<account-id>:agency:<agency-name>`.
+`provider-urn` | String | *Required* | The Huawei Cloud IAM v5 OIDC provider URN, in the format `iam::<account-id>:oidcProvider:<provider-name>`.
+`agency-urn` | String | *Required* | The Huawei Cloud IAM v5 agency URN to assume, in the format `iam::<account-id>:agency:<agency-name>`.
 `audience` | String | `sts.huaweicloud.com` | The audience for the GitHub OIDC token.
 `session-name` | String | `GitHubActions` | The agency session name.
 `duration-seconds` | Number | `900` | The agency session duration, from `900` seconds (15 minutes) to `43200` seconds (12 hours).
