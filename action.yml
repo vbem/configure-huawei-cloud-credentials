@@ -16,52 +16,52 @@ inputs:
     required: true
   audience:
     description: The audience for OIDC token.
-      Optional, default to `sts.huaweicloud.com`.
+      Default to `sts.huaweicloud.com`.
     required: false
     default: sts.huaweicloud.com
   session-name:
     description: The session name for agency assuming.
-      Optional, default to `GitHubActions`.
+      Default to `GitHubActions`.
     required: false
     default: GitHubActions
   duration-seconds:
     description: The duration seconds for agency assuming.
-      Optional, between `900` (15 mins) and `43200` (12 hrs), default to `900` (15 mins).
+      Must be between `900` (15 mins) and `43200` (12 hrs), default to `900` (15 mins).
     required: false
     default: "900"
   export-env:
     description: Whether to export the credentials as env vars.
-      Optional, default to `true`.
+      Default to `true`.
     required: false
     default: "true"
   env-ak-name:
     description: The env name for Access Key ID to export.
-      Optional, default to `HUAWEICLOUD_SDK_AK`.
+      Default to `HUAWEICLOUD_SDK_AK`.
     required: false
     default: HUAWEICLOUD_SDK_AK
   env-sk-name:
     description: The env name for Secret Access Key to export.
-      Optional, default to `HUAWEICLOUD_SDK_SK`.
+      Default to `HUAWEICLOUD_SDK_SK`.
     required: false
     default: HUAWEICLOUD_SDK_SK
   env-st-name:
     description: The env name for Security Token to export.
-      Optional, default to `HUAWEICLOUD_SDK_SECURITY_TOKEN`.
+      Default to `HUAWEICLOUD_SDK_SECURITY_TOKEN`.
     required: false
     default: HUAWEICLOUD_SDK_SECURITY_TOKEN
   sts-region:
     description: The region of Huawei Cloud STS API for requesting.
-      Optional, default to `cn-east-3`.
+      Default to `` (`ap-southeast-1` for GitHub-hosted runners, `cn-east-3` otherwise).
     required: false
-    default: cn-east-3
+    default: ""
   api-timeout:
     description: The timeout seconds for API calls to GitHub and Huawei Cloud STS.
-      Optional, default to `10`.
+      Default to `10`.
     required: false
     default: "10"
   api-retry:
     description: The retry times for API calls to GitHub and Huawei Cloud STS.
-      Optional, default to `2`.
+      Default to `2`.
     required: false
     default: "2"
 
@@ -180,8 +180,11 @@ runs:
             "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -Mcre .value)"
 
           # https://support.huaweicloud.com/api-iam5/AssumeAgencyWithOIDC.html
-          sts_api="https://sts.${{ inputs.sts-region }}.myhuaweicloud.com"
-          sts_api+='/v5/agencies/assume-with-oidc'
+          sts_region="${{ inputs.sts-region }}"
+          if [[ -z $sts_region ]]; then
+            sts_region="${{ runner.environment=='github-hosted'&&'ap-southeast-1'||'cn-east-3' }}"
+          fi
+          sts_api="https://sts.$sts_region.myhuaweicloud.com/v5/agencies/assume-with-oidc"
           echo "🌼 Requesting temporary credentials from $sts_api" >&2
           req="$(jq -McRne \
             --arg id_token "$jwt" \
